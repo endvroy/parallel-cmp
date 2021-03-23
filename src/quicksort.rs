@@ -1,4 +1,7 @@
 extern crate rayon;
+extern crate rand;
+
+use self::rand::Rng;
 
 fn three_way_partition<T: PartialOrd>(arr: &mut [T], p_idx: usize) -> (usize, usize) {
     let mut x = 0;
@@ -28,7 +31,8 @@ pub fn single_threaded<T: PartialOrd>(arr: &mut [T]) {
     if len <= 1 {
         return;
     }
-    let p_idx = arr.len() / 2;  // todo: use random pivot
+    let mut rng = rand::thread_rng();
+    let p_idx = rng.gen_range(0..len);
     let (x, y) = three_way_partition(arr, p_idx);
     single_threaded(&mut arr[0..x]);
     single_threaded(&mut arr[y..len]);
@@ -39,7 +43,8 @@ pub fn parallel<T: PartialOrd + Send>(arr: &mut [T]) {
     if len <= 1 {
         return;
     }
-    let p_idx = arr.len() / 2;  // todo: use random pivot
+    let mut rng = rand::thread_rng();
+    let p_idx = rng.gen_range(0..len);
     let (x, y) = three_way_partition(arr, p_idx);
     let (arr_rem, right) = arr.split_at_mut(y);
     let (left, _) = arr_rem.split_at_mut(x);
