@@ -1,5 +1,5 @@
 [package]
-name = "multicore-proj"
+name = "parallel_cmp"
 version = "0.1.0"
 authors = ["ruoyi <endvroy@gmail.com>"]
 edition = "2018"
