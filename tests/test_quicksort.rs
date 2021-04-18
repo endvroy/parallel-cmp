@@ -18,8 +18,8 @@ mod test_quicksort {
         let mut ref_vec = vec.clone();
         let mut par_vec = vec.clone();
         ref_vec.sort();
-        quicksort::single_threaded(&mut vec);
-        quicksort::parallel(&mut par_vec);
+        quicksort::single_threaded::sort(&mut vec);
+        quicksort::parallel::sort(&mut par_vec);
         assert_eq!(ref_vec, vec);
         assert_eq!(ref_vec, par_vec);
     }

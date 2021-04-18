@@ -1,2 +1,4 @@
 pub mod quicksort;
-pub mod connected_components;
+mod matrix_multi;
+mod histogram;
+// pub mod connected_components;
