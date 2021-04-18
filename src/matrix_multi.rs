@@ -11,11 +11,11 @@ struct Matrix<T: Num> {
 }
 
 impl<T: Num> Matrix<T> {
-    fn new(height: usize, width: usize) -> Self {
+    fn new(n_rows: usize, n_cols: usize) -> Self {
         Matrix {
-            n_rows: height,
-            n_cols: width,
-            buf: Vec::with_capacity(width * height),
+            n_rows,
+            n_cols,
+            buf: Vec::with_capacity(n_cols * n_rows),
         }
     }
 }
@@ -62,14 +62,31 @@ pub mod parallel {
     use super::*;
     use rayon::prelude::*;
 
-    impl<T: NumAssign + Copy> IntoParallelRefIterator for Matrix<T> {
-        type Iter = ();
-        type Item = ();
+    struct MatrixRowIterator<'a, T: Num> {
+        matrix: &'a Matrix<T>,
+        row_idx: usize,
+    }
 
-        fn par_iter(&'data self) -> Self::Iter {
-            todo!()
+    impl<'a, T: Num> Iterator for MatrixRowIterator<'a, T> {
+        type Item = Matrix<T>;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            self.matrix.buf.chunks(self.matrix.n_cols);
+
+            if self.row_idx > self.matrix.n_rows {
+                Option::None
+            } else {
+                let mut row = Matrix::new(1,
+                                          self.matrix.n_cols);
+                // todo: ref self.row_idx
+
+                self.row_idx += 1;
+                Option::Some(row)
+            }
         }
     }
 
-    fn matmul<T: NumAssign + Copy>(a: &Matrix<T>, b: &Matrix<T>) -> Matrix<T> {}
+    fn matmul<T: NumAssign + Copy>(a: &Matrix<T>, b: &Matrix<T>) -> Matrix<T> {
+        unimplemented!()
+    }
 }
