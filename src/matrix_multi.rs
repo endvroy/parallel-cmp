@@ -2,9 +2,9 @@ extern crate rayon;
 extern crate num_traits;
 
 use std::ops::{Index, IndexMut};
-use num_traits::{Num, NumAssign};
+// use num_traits::{Num, NumAssign};
 
-struct Matrix {
+pub struct Matrix {
     n_rows: usize,
     n_cols: usize,
     buf: Vec<f64>,
@@ -40,7 +40,7 @@ impl IndexMut<(usize, usize)> for Matrix {
 pub mod single_threaded {
     use super::*;
 
-    fn matmul(a: &Matrix, b: &Matrix) -> Matrix {
+    pub fn matmul(a: &Matrix, b: &Matrix) -> Matrix {
         if a.n_cols != b.n_rows {
             panic!("matrix row and columns do not match");
         }
@@ -62,36 +62,100 @@ pub mod parallel {
     use super::*;
     use rayon::prelude::*;
 
-    struct MatrixRow<'a> {
-        v: &'a [f64],
-        size: usize,
-    }
-
-    struct MatrixRowIterator<'a> {
+    struct RowIterator<'a> {
         matrix: &'a Matrix,
-        row_idx: usize,
+        row: usize,
+        i: usize,
     }
 
-    impl<'a> Iterator for MatrixRowIterator<'a> {
-        type Item = Matrix;
-
-        fn next(&mut self) -> Option<Self::Item> {
-            self.matrix.buf.chunks(self.matrix.n_cols);
-
-            if self.row_idx > self.matrix.n_rows {
-                Option::None
-            } else {
-                let mut row = Matrix::new(1,
-                                          self.matrix.n_cols);
-                // todo: ref self.row_idx
-
-                self.row_idx += 1;
-                Option::Some(row)
+    impl<'a> RowIterator<'a> {
+        fn new(matrix: &'a Matrix, row: usize) -> Self {
+            RowIterator {
+                matrix,
+                row,
+                i: 0,
             }
         }
     }
 
-    fn matmul<T: NumAssign + Copy>(a: &Matrix, b: &Matrix) -> Matrix {
-        unimplemented!()
+    impl Iterator for RowIterator<'_> {
+        type Item = f64;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.i < self.matrix.n_cols {
+                let result = Option::Some(self.matrix[(self.row, self.i)]);
+                self.i += 1;
+                result
+            } else {
+                Option::None
+            }
+        }
+    }
+
+    struct ColIterator<'a> {
+        matrix: &'a Matrix,
+        col: usize,
+        i: usize,
+    }
+
+    impl<'a> ColIterator<'a> {
+        fn new(matrix: &'a Matrix, col: usize) -> Self {
+            ColIterator {
+                matrix,
+                col,
+                i: 0,
+            }
+        }
+    }
+
+    impl Iterator for ColIterator<'_> {
+        type Item = f64;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.i < self.matrix.n_rows {
+                let result = Option::Some(self.matrix[(self.i, self.col)]);
+                self.i += 1;
+                result
+            } else {
+                Option::None
+            }
+        }
+    }
+
+    impl Matrix {
+        fn iter_row(&self, row: usize) -> RowIterator {
+            if row >= self.n_rows {
+                panic!("row index out of range");
+            } else {
+                RowIterator::new(self, row)
+            }
+        }
+        fn iter_col(&self, col: usize) -> ColIterator {
+            if col >= self.n_cols {
+                panic!("column index out of range");
+            } else {
+                ColIterator::new(self, col)
+            }
+        }
+    }
+
+    fn matmul_one(a: &Matrix, b: &Matrix, row: usize, col: usize) -> f64 {
+        a.iter_row(row).zip(b.iter_col(col))
+            .par_bridge()
+            .map(|(x, y)| x * y)
+            .sum()
+    }
+
+    pub fn matmul(a: &Matrix, b: &Matrix) -> Matrix {
+        let buf = (0..a.n_rows)
+            .zip(0..b.n_cols)
+            .par_bridge()
+            .map(|(x, y)| matmul_one(a, b, x, y))
+            .collect();
+        Matrix {
+            n_rows: a.n_rows,
+            n_cols: b.n_cols,
+            buf,
+        }
     }
 }
