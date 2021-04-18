@@ -2,20 +2,22 @@ extern crate rayon;
 extern crate num_traits;
 
 use std::ops::{Index, IndexMut};
+use std::fmt::{Debug, Formatter};
 // use num_traits::{Num, NumAssign};
 
 pub struct Matrix {
-    n_rows: usize,
-    n_cols: usize,
-    buf: Vec<f64>,
+    pub n_rows: usize,
+    pub n_cols: usize,
+    pub buf: Vec<f64>,
 }
 
+
 impl Matrix {
-    fn new(n_rows: usize, n_cols: usize) -> Self {
+    pub fn new(n_rows: usize, n_cols: usize) -> Self {
         Matrix {
             n_rows,
             n_cols,
-            buf: Vec::with_capacity(n_cols * n_rows),
+            buf: vec![0.0; n_cols * n_rows],
         }
     }
 }
@@ -148,7 +150,7 @@ pub mod parallel {
 
     pub fn matmul(a: &Matrix, b: &Matrix) -> Matrix {
         let buf = (0..a.n_rows)
-            .zip(0..b.n_cols)
+            .zip(0..b.n_cols)   // todo: change to product
             .par_bridge()
             .map(|(x, y)| matmul_one(a, b, x, y))
             .collect();
