@@ -2,11 +2,11 @@ extern crate rayon;
 
 
 pub mod single_threaded {
-    pub fn calc_histogram(data: &[usize], n_bins: usize) -> Vec<usize> {
+    pub fn calc_histogram(data: &[f64], n_bins: usize) -> Vec<usize> {
         let mut histogram = vec![0; n_bins];
         let bin_interval = 20.0 / n_bins as f64;
         for x in data {
-            let idx = (*x as f64 / bin_interval) as usize;
+            let idx = (x / bin_interval) as usize;
             histogram[idx] += 1;
         }
         histogram
@@ -24,8 +24,8 @@ pub mod parallel {
         result
     }
 
-    fn calc_histogram(data: &[usize], n_bins: usize, n_threads: usize) -> Vec<usize> {
-        let chunk_size = data.len() / n_threads;
+    pub fn calc_histogram(data: &[f64], n_bins: usize, n_chunks: usize) -> Vec<usize> {
+        let chunk_size = data.len() / n_chunks;
         let result = data.chunks(chunk_size).par_bridge()
             .map(|x| super::single_threaded::calc_histogram(x, n_bins))
             .reduce_with(|x, y| combine_histograms(x, y))

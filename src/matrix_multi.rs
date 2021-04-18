@@ -4,13 +4,13 @@ extern crate num_traits;
 use std::ops::{Index, IndexMut};
 use num_traits::{Num, NumAssign};
 
-struct Matrix<T: Num> {
+struct Matrix {
     n_rows: usize,
     n_cols: usize,
-    buf: Vec<T>,
+    buf: Vec<f64>,
 }
 
-impl<T: Num> Matrix<T> {
+impl Matrix {
     fn new(n_rows: usize, n_cols: usize) -> Self {
         Matrix {
             n_rows,
@@ -20,8 +20,8 @@ impl<T: Num> Matrix<T> {
     }
 }
 
-impl<T: Num> Index<(usize, usize)> for Matrix<T> {
-    type Output = T;
+impl Index<(usize, usize)> for Matrix {
+    type Output = f64;
 
     fn index(&self, index: (usize, usize)) -> &Self::Output {
         let (x, y) = index;
@@ -30,7 +30,7 @@ impl<T: Num> Index<(usize, usize)> for Matrix<T> {
 }
 
 
-impl<T: Num> IndexMut<(usize, usize)> for Matrix<T> {
+impl IndexMut<(usize, usize)> for Matrix {
     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
         let (x, y) = index;
         &mut self.buf[x * self.n_cols + y]
@@ -40,14 +40,14 @@ impl<T: Num> IndexMut<(usize, usize)> for Matrix<T> {
 pub mod single_threaded {
     use super::*;
 
-    fn matmul<T: NumAssign + Copy>(a: &Matrix<T>, b: &Matrix<T>) -> Matrix<T> {
+    fn matmul(a: &Matrix, b: &Matrix) -> Matrix {
         if a.n_cols != b.n_rows {
             panic!("matrix row and columns do not match");
         }
         let mut c = Matrix::new(a.n_rows, b.n_cols);
         for row in 0..a.n_rows {
             for col in 0..b.n_cols {
-                let mut sum = T::zero();
+                let mut sum = 0.0;
                 for i in 0..a.n_cols {
                     sum += a[(row, i)] * b[(i, col)];
                 }
@@ -62,13 +62,18 @@ pub mod parallel {
     use super::*;
     use rayon::prelude::*;
 
-    struct MatrixRowIterator<'a, T: Num> {
-        matrix: &'a Matrix<T>,
+    struct MatrixRow<'a> {
+        v: &'a [f64],
+        size: usize,
+    }
+
+    struct MatrixRowIterator<'a> {
+        matrix: &'a Matrix,
         row_idx: usize,
     }
 
-    impl<'a, T: Num> Iterator for MatrixRowIterator<'a, T> {
-        type Item = Matrix<T>;
+    impl<'a> Iterator for MatrixRowIterator<'a> {
+        type Item = Matrix;
 
         fn next(&mut self) -> Option<Self::Item> {
             self.matrix.buf.chunks(self.matrix.n_cols);
@@ -86,7 +91,7 @@ pub mod parallel {
         }
     }
 
-    fn matmul<T: NumAssign + Copy>(a: &Matrix<T>, b: &Matrix<T>) -> Matrix<T> {
+    fn matmul<T: NumAssign + Copy>(a: &Matrix, b: &Matrix) -> Matrix {
         unimplemented!()
     }
 }
