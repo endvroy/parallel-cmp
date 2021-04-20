@@ -14,11 +14,13 @@ fn main() {
     match args[2].as_str() {
         "serial" => {
             quicksort::single_threaded::sort(&mut data);
+            println!("{:?}", data);
         }
         "parallel" => {
             let n_threads = usize::from_str(args[3].as_str()).unwrap();
             rayon::ThreadPoolBuilder::new().num_threads(n_threads).build_global().unwrap();
             quicksort::parallel::sort(&mut data);
+            println!("{:?}", data);
         }
         _ => {
             panic!("arg must be serial or parallel");
